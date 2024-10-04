@@ -9,8 +9,8 @@ class Item(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(), nullable=False)
-    price = Column(Float(), nullable=False, default=0.0)
+    name = Column(String(150), nullable=False, unique=True)
+    price = Column(Float, nullable=False, default=0.0)
 
     payment = relationship("PaymentData", back_populates="item", cascade="all, delete-orphan")
 
