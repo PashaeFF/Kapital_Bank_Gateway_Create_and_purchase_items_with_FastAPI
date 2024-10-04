@@ -1,0 +1,54 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from payment import KapitalPayment
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+
+app = FastAPI()
+
+
+users_data = [{
+    "id":1,
+    "fullname":"Rafig Pashayev",
+    }]
+
+
+orders = []
+
+
+def create_order(self, request, headers, redirect_page, package_object, 
+                     package_model, created_object, 
+                     payment_model, subscribe_id, subscription):
+        if not created_object:
+            return JSONResponse(status_code=200, content={"message": "email has been sent"})
+        
+        price = package_object.price if package_object.price else 0
+        
+        if price == 0:
+            created_object.is_free = True
+            created_object.save()
+            return Response("free", status=status.HTTP_201_CREATED, headers=headers)
+        
+        new_order_object = self.create_order_with_check_promocode(
+            request=request, headers=headers, 
+            redirect_page=redirect_page,
+            package_model=package_model, 
+            created_object=created_object, 
+            payment_model=payment_model,
+            subscribe_id=subscribe_id,
+            price=price,
+            subscription=subscription
+        )
+        return new_order_object
+
+
+
+@app.post("/create_order")
+def create_kapital_bank_order(request: Request):
+    host = os.getenv("")
+    redirect_page = 
+    
+    return "ok"
