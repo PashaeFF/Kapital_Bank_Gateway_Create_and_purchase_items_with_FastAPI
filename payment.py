@@ -76,6 +76,7 @@ class KapitalPayment:
                             createDate=createDate,
                             order_object_id=order_object.id)
         db.add(new_object)
+        db.commit()
         return new_object
     
 
@@ -108,11 +109,22 @@ class KapitalPayment:
         return final_response
     
 
-    def get_order_status_and_change_order_payment_status(model, payment_id):
+    def get_order_status_and_change_order_payment_status(payment_id, new_paid_object, db):
+        new_paid_object = new_paid_object.first()
+        cancellation_statuses = ["Cancelled","Rejected","Refused","Expired","Declined","Refunded"]
         response = KapitalPayment.get_order_status(payment_id)
         if response:
             status = response["order"]["status"]
-            return status
+            if status not in cancellation_statuses:
+                print("first paid > ", new_paid_object.successfully_paid)
+                if not new_paid_object.successfully_paid:
+                    new_paid_object.successfully_paid=True
+                    db.commit()
+                    db.refresh(new_paid_object)
+                    print("last paid > ", new_paid_object.successfully_paid)
+                return "Accepted"
+            else:
+                return status
         
 
 class NewOrderObject:
@@ -146,15 +158,14 @@ class NewOrderObject:
 
     
 
-    # def if_paid_change_the_order_status(order, model, payment_model, redirect_to):
-    #     order_model = get_object_or_404(payment_model, order_model=order)
-    #     host = os.getenv("SITE_HOST")
-    #     response = KapitalPayment.get_order_status_and_change_order_payment_status(
-    #         model=model,
-    #         payment_id=order_model.order_id,
-    #         new_paid_object=order,
-    #     )
-    #     if response == "Accepted":
-    #         accept_email = NewOrderObject.send_email_template_for_payment(email_type=email_type,
-    #                                                    order=order)
-    #     return HttpResponseRedirect(redirect_to=f"{host}/{redirect_to}?status_code={response}")
+    def if_paid_change_the_order_status(self, order, payment_model, db):
+        order_model = db.query(payment_model).filter(payment_model.order_object_id==order.first().id).first()
+        response = KapitalPayment.get_order_status_and_change_order_payment_status(
+            payment_id=order_model.order_id,
+            new_paid_object=order,
+            db=db
+        )
+        return {
+            "order":order_model.order.item.name,
+            "successfully_paid":order_model.order.successfully_paid
+        }

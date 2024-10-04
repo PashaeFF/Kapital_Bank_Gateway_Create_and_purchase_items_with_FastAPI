@@ -46,7 +46,7 @@ async def buy_the_item(item_id:int, db: Session = Depends(database.get_db),
                                              bank_installment_month=bank_installment_month,
                                              db=db)
     host = os.getenv("BACKEND_HOST")
-    redirect_page = f"{host}/payment/item/{item_id}"
+    redirect_page = f"{host}/payment/item/{item_id}/{created_object.id}"
     pay_order = pay_order_object.create_order(
             redirect_page=redirect_page,
             package_object=item, 
@@ -55,6 +55,17 @@ async def buy_the_item(item_id:int, db: Session = Depends(database.get_db),
             subscribe_id=item.id,
             db=db)
     return pay_order
+
+
+@payment_route.get("/item/{item_id}/{order_id}")
+def get_complete_order(item_id:int, order_id:int,
+                       db: Session = Depends(database.get_db)):
+    pay_order_object = NewOrderObject()
+    order = db.query(models.ItemOrder).filter(models.ItemOrder.id==order_id)
+    pay_order_object.if_paid_change_the_order_status(order=order, 
+                                                     payment_model=models.PaymentData, 
+                                                     db=db)
+
 
 
 @payment_route.get("/orders", response_model=List[schemas.Orders])
