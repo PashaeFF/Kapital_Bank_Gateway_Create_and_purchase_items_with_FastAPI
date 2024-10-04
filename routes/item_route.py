@@ -8,7 +8,7 @@ from utils import schemas
 from utils.helper import *
 from typing import List
 
-item_route = APIRouter("/items")
+item_route = APIRouter(prefix="/items")
 
 
 @item_route.post("/add-item")
