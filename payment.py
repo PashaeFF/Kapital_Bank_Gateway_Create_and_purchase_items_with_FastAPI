@@ -79,7 +79,7 @@ class KapitalPayment:
         return new_object
     
 
-    def check_installment_or_cash_order(request, order_object, redirect_page, price, id):
+    def check_installment_or_cash_order(order_object, redirect_page, price, id):
         data = ''
         if hasattr(order_object, 'installment_paid'):
             description = f"TAKSIT={order_object.bank_installment_month}"
@@ -87,7 +87,6 @@ class KapitalPayment:
             description = id
 
         data = KapitalPayment.create_order_data(
-            request=request,
             redirect_page=redirect_page,
             price=price,
             description=description,

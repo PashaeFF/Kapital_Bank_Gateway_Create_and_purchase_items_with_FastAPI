@@ -6,3 +6,4 @@ psycopg2-binary
 fastapi_sqlalchemy
 python-dotenv
 python-multipart
+requests

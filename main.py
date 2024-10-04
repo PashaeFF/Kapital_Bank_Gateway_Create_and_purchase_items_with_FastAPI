@@ -11,6 +11,7 @@ app = FastAPI(
 
 
 app.include_router(item_route.item_route)
+app.include_router(payment_route.payment_route)
 
 
 

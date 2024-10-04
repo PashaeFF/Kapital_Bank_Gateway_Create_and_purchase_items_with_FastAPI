@@ -12,3 +12,10 @@ class Item(BaseModel):
                 "price": 19.99
             }
         }
+
+
+class Orders(BaseModel):
+    id: int
+    successfully_paid: bool
+    bank_installment_paid: bool
+    bank_installment_month: int
