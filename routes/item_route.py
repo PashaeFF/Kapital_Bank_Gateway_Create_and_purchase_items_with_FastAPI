@@ -25,7 +25,7 @@ async def add_item(db: Session = Depends(database.get_db),
     return JSONResponse(data, status_code=200)
 
 
-@item_route.post("/get-items", response_model=List[schemas.Item])
+@item_route.get("/get-items", response_model=List[schemas.Item])
 def get_items(db: Session = Depends(database.get_db),
               limit: int = Query(10, description="Number of items per page"),
               offset: int = Query(0, description="Offset for pagination (starting item)")
