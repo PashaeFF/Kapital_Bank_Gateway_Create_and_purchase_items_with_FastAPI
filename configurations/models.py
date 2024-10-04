@@ -12,9 +12,8 @@ class Item(Base):
     name = Column(String(150), nullable=False, unique=True)
     price = Column(Float, nullable=False, default=0.0)
 
-    payment = relationship("PaymentData", back_populates="item", cascade="all, delete-orphan")
     item_order = relationship("ItemOrder", back_populates="item", cascade="all, delete-orphan")
-    
+
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, onupdate=datetime.now())
 
@@ -27,10 +26,15 @@ class ItemOrder(Base):
     successfully_paid = Column(Boolean, default=False)
     bank_installment_paid = Column(Boolean, default=False)
     bank_installment_month = Column(Integer, default=0)
+    price = Column(Float, nullable=False, default=0.0)
 
     item_id = Column(Integer(), ForeignKey("item.id", ondelete='CASCADE'), nullable=True)
     item = relationship("Item", back_populates="item_order") 
 
+    payment = relationship("PaymentData", back_populates="order", cascade="all, delete-orphan")
+
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, onupdate=datetime.now())
 
 
 class PaymentData(Base):
@@ -38,14 +42,15 @@ class PaymentData(Base):
 
     id = Column(Integer, primary_key=True)
 
-    order_id = Column(Integer(), nullable=False),
+    order_id = Column(Integer)
     currency = Column(String(), nullable=False)
     order_status = Column(String(), nullable=False),
     amount = Column(Float(), nullable=False, default=0.0)
-    order_type= Column(String(), nullable=False),
+    order_type= Column(String(), nullable=False)
+    createDate = Column(DateTime, nullable=True)
 
-    item_id = Column(Integer(), ForeignKey("item.id", ondelete='CASCADE'), nullable=True)
-    item = relationship("Item", back_populates="payment") 
+    order_object_id = Column(Integer(), ForeignKey("item_order.id", ondelete='CASCADE'), nullable=True)
+    order = relationship("ItemOrder", back_populates="payment") 
 
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, onupdate=datetime.now())

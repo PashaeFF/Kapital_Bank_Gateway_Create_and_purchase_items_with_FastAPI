@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 class Item(BaseModel):
     id: int
-    name: str = Field(..., max_length=150)
-    price: float = Field(...)
+    name: str
+    price: float
 
     class Config:
         schema_extra = {

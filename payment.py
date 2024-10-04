@@ -1,6 +1,7 @@
 import requests
 import os, base64
 from dotenv import load_dotenv
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
@@ -60,28 +61,26 @@ class KapitalPayment:
             }
     
 
-    def create_payment(model, result_status,order_object):
+    def create_payment(model, result_status, order_object, db):
         o_id = result_status['order']['id']
         createDate = result_status['order']['createTime']
         amount = result_status['order']['amount']
         currency = result_status['order']['currency']
         orderType = result_status['order']['typeRid']
         orderstatus = result_status['order']['status']
-        new_object = model.objects.get_or_create(order_id=o_id,
-                                                currency=currency,
-                                                order_status=orderstatus,
-                                                amount=amount,
-                                                order_type=orderType,
-                                                createDate=createDate,
-                                                order_model=order_object)
-        print("New Payment object > ", new_object[0].id)
-        print("Payment model > ", model)
+        new_object = model(order_id=o_id,
+                            currency=currency,
+                            order_status=orderstatus,
+                            amount=amount,
+                            order_type=orderType,
+                            createDate=createDate,
+                            order_object_id=order_object.id)
+        db.add(new_object)
         return new_object
     
 
     def check_installment_or_cash_order(order_object, redirect_page, price, id):
-        data = ''
-        if hasattr(order_object, 'installment_paid'):
+        if order_object.bank_installment_paid:
             description = f"TAKSIT={order_object.bank_installment_month}"
         else:
             description = id
@@ -113,7 +112,49 @@ class KapitalPayment:
         response = KapitalPayment.get_order_status(payment_id)
         if response:
             status = response["order"]["status"]
-            return 
+            return status
         
 
+class NewOrderObject:
+    def create_order(self, redirect_page, package_object, 
+                     created_object, payment_model, subscribe_id, db):
+        
+        price = package_object.price if package_object.price else 0
+        if price == 0:
+            created_object.is_free = True
+            db.commit()
+            db.refresh(created_object)
+            return JSONResponse("free", status_code=201)
+        
+        data = KapitalPayment.check_installment_or_cash_order(created_object, redirect_page, price, subscribe_id)
 
+        final_response = KapitalPayment.return_final_response_for_created_payment(data)
+
+        try:
+            pay_obj = KapitalPayment.create_payment(model=payment_model, 
+                                                    result_status=final_response["result_status"], 
+                                                    order_object=created_object, db=db)  
+            del final_response['result_status']
+            if price != 0:
+                created_object.successfuly_paid=False
+                db.refresh(created_object)
+            print("cr suc paid > ", created_object.successfuly_paid)
+            return JSONResponse(final_response, status_code=201)
+        except Exception as err:
+            return JSONResponse(str(err), status_code=400)
+    
+
+    
+
+    # def if_paid_change_the_order_status(order, model, payment_model, redirect_to):
+    #     order_model = get_object_or_404(payment_model, order_model=order)
+    #     host = os.getenv("SITE_HOST")
+    #     response = KapitalPayment.get_order_status_and_change_order_payment_status(
+    #         model=model,
+    #         payment_id=order_model.order_id,
+    #         new_paid_object=order,
+    #     )
+    #     if response == "Accepted":
+    #         accept_email = NewOrderObject.send_email_template_for_payment(email_type=email_type,
+    #                                                    order=order)
+    #     return HttpResponseRedirect(redirect_to=f"{host}/{redirect_to}?status_code={response}")
