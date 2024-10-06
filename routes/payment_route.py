@@ -1,5 +1,5 @@
 from fastapi import (APIRouter, Depends, Request, 
-                     Form, Query, UploadFile)
+                     Form, Query, UploadFile, Response)
 from sqlalchemy.orm import Session
 
 from fastapi.responses import JSONResponse
@@ -62,10 +62,12 @@ def get_complete_order(item_id:int, order_id:int,
                        db: Session = Depends(database.get_db)):
     pay_order_object = NewOrderObject()
     order = db.query(models.ItemOrder).filter(models.ItemOrder.id==order_id)
-    pay_order_object.if_paid_change_the_order_status(order=order, 
-                                                     payment_model=models.PaymentData, 
-                                                     db=db)
-
+    if order.first():
+        order_response = pay_order_object.if_paid_change_the_order_status(order=order, 
+                                                        payment_model=models.PaymentData, 
+                                                        db=db)
+        return order_response
+    return JSONResponse("Order not found", status_code=404)
 
 
 @payment_route.get("/orders", response_model=List[schemas.Orders])
@@ -74,3 +76,11 @@ def get_items(db: Session = Depends(database.get_db),
               offset: int = Query(0, description="Offset for pagination (starting item)")
               ):
     return db.query(models.ItemOrder).offset(offset).limit(limit).all()
+
+
+@payment_route.get("/pay-orders", response_model=List[schemas.PayOrders])
+def get_items(db: Session = Depends(database.get_db),
+              limit: int = Query(10, description="Number of items per page"),
+              offset: int = Query(0, description="Offset for pagination (starting item)")
+              ):
+    return db.query(models.PaymentData).offset(offset).limit(limit).all()

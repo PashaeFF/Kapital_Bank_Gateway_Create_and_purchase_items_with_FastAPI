@@ -109,7 +109,7 @@ class KapitalPayment:
         return final_response
     
 
-    def get_order_status_and_change_order_payment_status(payment_id, new_paid_object, db):
+    def get_order_status_and_change_order_payment_status(payment_id, new_paid_object, db, order_model):
         new_paid_object = new_paid_object.first()
         cancellation_statuses = ["Cancelled","Rejected","Refused","Expired","Declined","Refunded"]
         response = KapitalPayment.get_order_status(payment_id)
@@ -119,9 +119,14 @@ class KapitalPayment:
                 print("first paid > ", new_paid_object.successfully_paid)
                 if not new_paid_object.successfully_paid:
                     new_paid_object.successfully_paid=True
+
                     db.commit()
                     db.refresh(new_paid_object)
                     print("last paid > ", new_paid_object.successfully_paid)
+                order_model.order_status = status
+                db.commit()
+                db.refresh(order_model)
+                order_model
                 return "Accepted"
             else:
                 return status
@@ -149,6 +154,7 @@ class NewOrderObject:
             del final_response['result_status']
             if price != 0:
                 created_object.successfuly_paid=False
+                db.commit()
                 db.refresh(created_object)
             print("cr suc paid > ", created_object.successfuly_paid)
             return JSONResponse(final_response, status_code=201)
@@ -159,13 +165,18 @@ class NewOrderObject:
     
 
     def if_paid_change_the_order_status(self, order, payment_model, db):
-        order_model = db.query(payment_model).filter(payment_model.order_object_id==order.first().id).first()
-        response = KapitalPayment.get_order_status_and_change_order_payment_status(
-            payment_id=order_model.order_id,
-            new_paid_object=order,
-            db=db
-        )
-        return {
-            "order":order_model.order.item.name,
-            "successfully_paid":order_model.order.successfully_paid
-        }
+        order_id = order.first().id 
+        print("oid > ", order_id)
+        order_model = db.query(payment_model).filter(payment_model.order_object_id==order_id).first()
+        if order_model:
+            response = KapitalPayment.get_order_status_and_change_order_payment_status(
+                payment_id=order_model.order_id,
+                new_paid_object=order,
+                db=db,
+                order_model=order_model
+            )
+            return {
+                "order":order_model.order.item.name,
+                "successfully_paid":order_model.order.successfully_paid
+            }
+        return JSONResponse({"error":"Order not found"}, status_code=404)

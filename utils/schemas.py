@@ -19,3 +19,9 @@ class Orders(BaseModel):
     successfully_paid: bool
     bank_installment_paid: bool
     bank_installment_month: int
+
+
+class PayOrders(BaseModel):
+    id: int
+    order_object_id:int
+    order_status: str

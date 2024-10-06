@@ -44,7 +44,7 @@ class PaymentData(Base):
 
     order_id = Column(Integer)
     currency = Column(String(), nullable=False)
-    order_status = Column(String(), nullable=False),
+    order_status = Column(String(), nullable=False)
     amount = Column(Float(), nullable=False, default=0.0)
     order_type= Column(String(), nullable=False)
     createDate = Column(DateTime, nullable=True)
