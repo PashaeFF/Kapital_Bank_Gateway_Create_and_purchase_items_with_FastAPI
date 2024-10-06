@@ -141,7 +141,7 @@ class NewOrderObject:
             created_object.is_free = True
             db.commit()
             db.refresh(created_object)
-            return JSONResponse("free", status_code=201)
+            return JSONResponse("Free Order", status_code=201)
         
         data = KapitalPayment.check_installment_or_cash_order(created_object, redirect_page, price, subscribe_id)
 
